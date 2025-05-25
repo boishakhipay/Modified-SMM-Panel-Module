@@ -1,0 +1,2 @@
+INSERT INTO `paymentmethods` (`methodId`, `methodName`, `methodLogo`, `methodVisibleName`, `methodCallback`, `methodMin`, `methodMax`, `methodFee`, `methodBonusPercentage`, `methodBonusStartAmount`, `methodCurrency`, `methodStatus`, `methodExtras`, `methodPosition`, `methodInstructions`) VALUES
+(75, 'BoishakhiPay', 'https://boishakhipay.com/boishakhipay-logo.png', 'BoishakhiPay', 'boishakhipay', 1, 1000, 0, 0, 0, 'BDT', '1', '{\"api_key\":\"\",\"exchange_rate\":\"100\"}', 1, '');
