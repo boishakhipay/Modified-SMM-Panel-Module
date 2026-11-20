@@ -17,7 +17,7 @@ if (empty($invoice_id)) {
 }
 
 $apiKey = trim($methodExtras['api_key']);
-$apiUrl = rtrim($methodExtras["api_url"], "/") . "/verify"; // অ্যাডমিন প্যানেল থেকে নেওয়া
+$apiUrl = rtrim($methodExtras["api_url"], "/") . "/verify";
 
 $verifyData = [
     'invoice_id' => $invoice_id
