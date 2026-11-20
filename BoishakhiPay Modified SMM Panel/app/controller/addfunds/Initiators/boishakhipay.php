@@ -36,18 +36,15 @@ $insert->execute([
 $requestData = [
     'full_name'    => $payeeName,
     'email'        => $payeeEmail,
-    'amount'       => round($paymentAmount * $exchangeRate, 2),
+    'amount'       => (float) round($paymentAmount * $exchangeRate, 2),
     'redirect_url' => $paymentURL,
-    'cancel_url'   => site_url("addfunds"),
-    'metadata'     => [
-        'order_id' => $orderId
-    ]
+    'cancel_url'   => site_url("addfunds?status=cancelled"),
+    'metadata'     => ['order_id' => $orderId]
 ];
 
 $postUrl = $apiUrl . "/create";
 
 $curl = curl_init();
-
 curl_setopt_array($curl, [
     CURLOPT_URL => $postUrl,
     CURLOPT_RETURNTRANSFER => true,
@@ -66,21 +63,21 @@ curl_close($curl);
 
 if ($err) {
     errorExit("cURL Error #:" . $err);
+}
+
+$result = json_decode($upresponse, true);
+
+if (!empty($result['payment_url'])) {
+    $paymentUrl = $result['payment_url'];
+    $redirectForm = '
+    <script type="text/javascript">
+        // কোনো AJAX বা ফর্ম ছাড়া সরাসরি উইন্ডো রিডাইরেক্ট
+        window.location.href = "' . $paymentUrl . '";
+    </script>';
 } else {
-    $result = json_decode($upresponse, true);
-    if (isset($result['payment_url'])) {
-        $paymentUrl = $result['payment_url'];
-        $redirectForm .= '<form method="GET" action="' . $paymentUrl . '" name="boishakhipayForm">';
-        $redirectForm .= '</form>
-        <script type="text/javascript">
-        document.boishakhipayForm.submit();
-        </script>';
-    } else {
-        $errMsg = $result['message'] ?? 'Unknown error from payment gateway.';
-        errorExit($errMsg);
-    }
+    errorExit($result['message'] ?? 'Unknown error from payment gateway.');
 }
 
 $response["success"] = true;
-$response["message"] = "Your payment has been initiated and you will now be redirected to the payment gateway.";
+$response["message"] = "Redirecting to BoishakhiPay...";
 $response["content"] = $redirectForm;
