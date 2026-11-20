@@ -5,7 +5,7 @@ if (!defined('ADDFUNDS')) {
 }
 
 $apiKey = $methodExtras["api_key"];
-$apiUrl = "https://pay.boishakhipay.com/";
+$apiUrl = rtrim($methodExtras["api_url"], "/");
 $exchangeRate = $methodExtras["exchange_rate"];
 $payeeName = $user["name"] ?: "User";
 $payeeEmail = $user["email"] ?: "test@test.com";
@@ -33,21 +33,18 @@ $insert->execute([
     "extra" => $orderId
 ]);
 
-
 $requestData = [
-    'cus_name'     => $payeeName,
-    'cus_email'         => $payeeEmail,
-    'amount'        => round($paymentAmount * $exchangeRate, 2),
-    'metadata'      => [
+    'full_name'    => $payeeName,
+    'email'        => $payeeEmail,
+    'amount'       => round($paymentAmount * $exchangeRate, 2),
+    'redirect_url' => $paymentURL,
+    'cancel_url'   => site_url("addfunds"),
+    'metadata'     => [
         'order_id' => $orderId
-    ],
-    'success_url'  => site_url(""),
-    'cancel_url'    => site_url(""),
-    'webhook_url'   => $paymentURL
+    ]
 ];
 
-$host = parse_url($apiUrl,  PHP_URL_HOST);
-$postUrl = "https://{$host}/api/payment/create";
+$postUrl = $apiUrl . "/create";
 
 $curl = curl_init();
 
@@ -58,27 +55,29 @@ curl_setopt_array($curl, [
     CURLOPT_CUSTOMREQUEST => "POST",
     CURLOPT_POSTFIELDS => json_encode($requestData),
     CURLOPT_HTTPHEADER => [
-        "API-KEY: " . $apiKey,
-        "content-type: application/json"
+        "X-API-KEY: " . $apiKey,
+        "Content-Type: application/json"
     ],
 ]);
 
 $upresponse = curl_exec($curl);
 $err = curl_error($curl);
 curl_close($curl);
+
 if ($err) {
     errorExit("cURL Error #:" . $err);
 } else {
     $result = json_decode($upresponse, true);
-    if (isset($result['status']) && isset($result['payment_url'])) {
+    if (isset($result['payment_url'])) {
         $paymentUrl = $result['payment_url'];
-        $redirectForm .= '<form method="GET" action=" ' . $paymentUrl . '" name="boishakhipayForm">';
+        $redirectForm .= '<form method="GET" action="' . $paymentUrl . '" name="boishakhipayForm">';
         $redirectForm .= '</form>
         <script type="text/javascript">
         document.boishakhipayForm.submit();
         </script>';
     } else {
-        errorExit($result['message']);
+        $errMsg = $result['message'] ?? 'Unknown error from payment gateway.';
+        errorExit($errMsg);
     }
 }
 
